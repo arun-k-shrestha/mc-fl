@@ -1,0 +1,27 @@
+Use this stack:
+
+Transcribe audio to text
+
+Local: faster-whisper
+
+Cloud fallback: OpenAI audio transcription API
+
+Chunk transcript text
+
+Split by speaker or timestamp blocks, then into ~300–800 token chunks with overlap
+
+Create embeddings
+
+Local: sentence-transformers
+
+Cloud fallback: OpenAI embeddings
+
+Store embeddings locally
+
+Simplest: FAISS + a sidecar JSON/SQLite file for metadata
+
+Easier persistence/filtering: Chroma persistent client
+
+Generate answer
+
+Send top retrieved chunks to an LLM with citations/timestamps in the prompt

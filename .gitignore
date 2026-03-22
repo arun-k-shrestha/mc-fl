@@ -1,0 +1,17 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Secrets / local config
+.env
+.env.*
+
+# Python cache / compiled files
+__pycache__/
+*.py[cod]
+
+# Optional Python tooling noise
+.pytest_cache/
+.mypy_cache/
+.DS_Store
