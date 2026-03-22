@@ -43,17 +43,18 @@ class QuestionRequest(BaseModel):
 
 class ToolCallFunction(BaseModel):
     name: str
-    arguments: Dict[str, Any]
-
+    arguments: Dict[str, Any] = {}
 
 class ToolCall(BaseModel):
     id: str
     function: ToolCallFunction
 
-
 class VapiMessage(BaseModel):
     type: str
-    toolCalls: Optional[List[ToolCall]] = None
+    toolCallList: Optional[List[ToolCall]] = None
+
+class VapiPayload(BaseModel):
+    message: VapiMessage
 
 
 def answer_from_docs(user_question: str) -> str:
@@ -129,50 +130,52 @@ Question:
 
 @app.post("/vapi")
 def vapi_tool_handler(
-    payload: VapiMessage,
+    payload: VapiPayload,
     x_vapi_secret: Optional[str] = Header(default=None),
 ):
-    # Optional auth check
-    if VAPI_SECRET and x_vapi_secret != VAPI_SECRET:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    message = payload.message
 
-    if payload.type != "tool-calls":
+    if message.type != "tool-calls":
         return {"results": []}
 
-    if not payload.toolCalls:
+    if not message.toolCallList:
         return {"results": []}
 
     results = []
 
-    for tool_call in payload.toolCalls:
+    for tool_call in message.toolCallList:
         tool_name = tool_call.function.name
         args = tool_call.function.arguments or {}
 
         if tool_name != "ask_docs":
             results.append(
                 {
-                    "name": tool_name,
                     "toolCallId": tool_call.id,
                     "result": "Unsupported tool.",
                 }
             )
             continue
 
-        question = args.get("question", "").strip()
+        question = str(args.get("question", "")).strip()
 
         if not question:
             answer = "I do not have enough information."
         else:
             try:
                 answer = answer_from_docs(question)
-            except Exception:
-                answer = "I do not have enough information."
+            except Exception as e:
+                results.append(
+                    {
+                        "toolCallId": tool_call.id,
+                        "error": f"Tool failed: {str(e)}",
+                    }
+                )
+                continue
 
         results.append(
             {
-                "name": "ask_docs",
                 "toolCallId": tool_call.id,
-                "result": answer,
+                "result": answer.replace("\n", " ").strip(),
             }
         )
 
