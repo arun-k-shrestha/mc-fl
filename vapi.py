@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException
 from openai import OpenAI
 from dotenv import load_dotenv
 from pydantic import BaseModel
-import os
 from typing import Any, Dict, List, Optional
+import os
 
 from retrieval import retrieve
 from load import load_embeddings
@@ -12,58 +12,34 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 load_dotenv()
+
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # for development only
+    allow_origins=["*"],  # tighten in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise RuntimeError("OPENAI_API_KEY is not set")
+
+client = OpenAI(api_key=api_key)
+
+# Load once at startup, not per request
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 chunks = load_embeddings()
 
-client = OpenAI(api_key=api_key)
+# Optional shared secret for Vapi webhook auth
+VAPI_SECRET = os.getenv("VAPI_SECRET")
 
 
 class QuestionRequest(BaseModel):
     question: str
 
-
-@app.post("/ask")
-def ask_question(req: QuestionRequest):
-    user_question = req.question
-
-    results = retrieve(
-        query=user_question,
-        chunks=chunks,
-        model=model,
-        k=3)
-
-    context = "\n\n".join([ r["text"] for r in results])
-
-    def stream():
-        with client.responses.stream(
-            model="gpt-4o-mini",
-            input=f"""
-                Context:
-                {context}
-
-                Question:
-                {user_question}
-                """
-        )as response:
-            for event in response:
-                if event.type=="response.output_text.delta":
-                    yield event.delta
-
-    return StreamingResponse(stream(), media_type="text/plain")
-
-
-# Vapi
 
 class ToolCallFunction(BaseModel):
     name: str
@@ -117,11 +93,48 @@ Question:
     return "I do not have enough information."
 
 
+@app.post("/ask")
+def ask_question(req: QuestionRequest):
+    user_question = req.question
+
+    results = retrieve(
+        query=user_question,
+        chunks=chunks,
+        model=model,
+        k=3,
+    )
+
+    context = "\n\n".join([r["text"] for r in results if "text" in r and r["text"]])
+
+    def stream():
+        with client.responses.stream(
+            model="gpt-4o-mini",
+            input=f"""
+You answer questions using only the provided context.
+If the context is insufficient, say exactly: "I do not have enough information."
+
+Context:
+{context}
+
+Question:
+{user_question}
+""".strip(),
+        ) as response:
+            for event in response:
+                if event.type == "response.output_text.delta":
+                    yield event.delta
+
+    return StreamingResponse(stream(), media_type="text/plain")
+
+
 @app.post("/vapi")
 def vapi_tool_handler(
     payload: VapiMessage,
     x_vapi_secret: Optional[str] = Header(default=None),
 ):
+    # Optional auth check
+    if VAPI_SECRET and x_vapi_secret != VAPI_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
     if payload.type != "tool-calls":
         return {"results": []}
