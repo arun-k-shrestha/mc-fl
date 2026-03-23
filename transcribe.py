@@ -3,6 +3,7 @@ import os
 
 model = WhisperModel("base")  # options: tiny, base, small, medium, large-v3
 
+output_dir = "data/transcripts"
 
 for i in os.listdir("./audio"): #audio is a folder
     print("./audio/"+i)
@@ -15,7 +16,8 @@ for i in os.listdir("./audio"): #audio is a folder
         output.append(segment.text)
     
     name, _ = os.path.splitext(i)
-    with open(name + ".txt","w") as f:
+    output_path = os.path.join(output_dir, name + ".txt")
+    with open(output_path, "w") as f:
         f.write("\n".join(output))
     
     # open adudioText folder:

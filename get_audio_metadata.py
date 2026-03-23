@@ -34,20 +34,20 @@ def clean_summary(text):
     # Trim extra spaces
     return text.strip()
 
-for entry in feed.entries[:2]:
+for entry in feed.entries[:10]:
     title = clean_filename(entry.title)
     if not entry.enclosures:
         continue
     mp3_url = entry.enclosures[0].href
 
-    # print(f"Downloading: {title}")
+    print(f"Downloading: {title}")
 
-    # audio_response = requests.get(mp3_url, headers=headers)
+    audio_response = requests.get(mp3_url, headers=headers)
 
-    # file_path = os.path.join(folder, f"{title}.mp3")
+    file_path = os.path.join(folder, f"{title}.mp3")
 
-    # with open(file_path, "wb") as f:
-    #     f.write(audio_response.content)
+    with open(file_path, "wb") as f:
+        f.write(audio_response.content)
     
     metadata = {
         "title": entry.get("title", ""),

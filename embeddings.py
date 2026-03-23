@@ -9,10 +9,17 @@ chunks =[]
 with open("./data/chunks/chunks.jsonl","r",encoding="utf-8") as f:
     for line in f:
         if line.split():
-            chunks.append(json.loads(line)) # could it be line["text"]?
+            chunks.append(json.loads(line))
 
+def build_input(c):
+    parts = [
+        f"Title: {c['title']}" if c.get("title") else "",
+        f"Summary: {c['summary']}" if c.get("summary") else "",
+        f"Content: {c['text']}"
+    ]
+    return "\n".join(p for p in parts if p)
 
-texts = [c["text"] for c in chunks]
+texts = [build_input(c) for c in chunks]
 embeddings = model.encode(texts,normalize_embeddings=True)
 
 for chunk,emb in zip(chunks,embeddings):
