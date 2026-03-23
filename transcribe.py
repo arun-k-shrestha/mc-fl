@@ -13,8 +13,9 @@ for i in os.listdir("./audio"): #audio is a folder
     output = []
     for segment in segments:
         output.append(segment.text)
-
-    with open("./audioText" + i + ".txt","w") as f:
+    
+    name, _ = os.path.splitext(i)
+    with open(name + ".txt","w") as f:
         f.write("\n".join(output))
     
     # open adudioText folder:

@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 from transformers import AutoTokenizer
 
-#INPUT_PATH= Path("audioTextMarch WASDE Few changes but pay attention.mp3.txt") 
+#INPUT_PATH= Path("audioTextMarch WASDE Few changes but pay attention.txt") 
 
 CHUNK_SIZE = 500
 OVERLAP_TOKENS = 70
@@ -16,6 +16,13 @@ tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v
 def count_tokens(text):
     return len(tokenizer.encode(text, add_special_tokens=False))
 
+def load_metadata(txt_path):
+    meta_path = txt_path.with_suffix(".json")
+    print(f"Transcript: {txt_path}")
+    print(f"Metadata:   {meta_path}")
+    if meta_path.exists():
+        return json.loads(meta_path.read_text(encoding="utf-8"))
+    return {}
 
 def chunk_sentences(sentences):
     chunks = []
@@ -35,7 +42,6 @@ def chunk_sentences(sentences):
             overlap = []
             overlap_tokens = 0
             for s in reversed(current):
-                print(s)
                 ts = count_tokens(s)
                 overlap.append(s)
                 overlap_tokens += ts
@@ -63,16 +69,22 @@ def main():
             text = file.read_text(encoding="utf_8").strip()
             if not text:
                 continue
-        
+            
+            metadata = load_metadata(file)
+
             sentences = [line.strip() for line in text.splitlines() if line.strip()]
             chunks = chunk_sentences(sentences)
 
             for i, chunk in enumerate(chunks,1):
                 out_f.write(json.dumps({
                     "chunk_id": f"{file.stem}_{i:04d}",
-                    "source_file": file.name,
                     "text": chunk["text"],
                     "token_count": chunk["token_count"],
+                    # metadata (clean + demo-friendly)
+                    "title": metadata.get("title"),
+                    "published": metadata.get("published"),
+                    "summary": metadata.get("summary"),
+
                 })+ "\n")
 
 
