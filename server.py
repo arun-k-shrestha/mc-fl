@@ -29,6 +29,11 @@ client = OpenAI(api_key=api_key)
 class QuestionRequest(BaseModel):
     question: str
 
+def load_text(file_path: str) -> str:
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+summary = load_text("summary.txt")
 
 @app.post("/ask")
 def ask_question(req: QuestionRequest):
@@ -47,7 +52,7 @@ def ask_question(req: QuestionRequest):
             model="gpt-4o-mini",
             input=f"""
                 Context:
-                {context}
+                {context,summary}
 
                 Question:
                 {user_question}
