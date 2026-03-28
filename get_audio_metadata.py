@@ -34,7 +34,7 @@ def clean_summary(text):
     # Trim extra spaces
     return text.strip()
 
-for entry in feed.entries[:10]:
+for entry in feed.entries[:1]:
     title = clean_filename(entry.title)
     if not entry.enclosures:
         continue

@@ -16,6 +16,7 @@ headers = {
     "authorization": os.getenv("ASSEMBLY_API")
 }
 
+
 for filename in os.listdir(audio_dir):
     input_path = os.path.join(audio_dir, filename)
     name, _ = os.path.splitext(filename)
