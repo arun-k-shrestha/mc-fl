@@ -47,7 +47,7 @@ def chunk_sentences(sentences):
                 overlap_tokens += ts
                 if overlap_tokens >= OVERLAP_TOKENS:
                     break
-
+            overlap.reverse() 
             current = overlap
             current_tokens = overlap_tokens
 
