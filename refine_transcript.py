@@ -1,3 +1,4 @@
+import os
 name_list = {
     "A": "Mike Caughlan",
     "B": "Shawn Bingham",
@@ -8,7 +9,16 @@ name_list = {
 
 count = 0
 
-with open("new_audio_txt.txt", "r") as f:
+input_dir = "data/transcripts"
+output_dir = "data/speaker_diarization"
+os.makedirs(output_dir, exist_ok=True)  # ensure output folder exists
+
+filename = "March WASDE Few changes but pay attention.txt"
+input_path = os.path.join(input_dir, filename)
+output_path = os.path.join(output_dir,filename)
+
+with open(input_path, "r") as f:
+    output = []
     for line in f:
         line = line.strip()
 
@@ -20,7 +30,12 @@ with open("new_audio_txt.txt", "r") as f:
 
         new_line = name + line[1:]
         print(new_line)
+        output.append(new_line)
 
         if count == 4:
             break
         count += 1
+    
+
+with open(output_path,"w",encoding="utf-8") as f:
+    f.write("\n".join(output))
