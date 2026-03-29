@@ -121,17 +121,17 @@ def main():
 
             for i, chunk in enumerate(chunks,1):
                 out_f.write(json.dumps({
-                    "chunk_id": f"{file.stem}_{i:04d}",
+                    "chunk_id": f"{file.stem} {i:04d}",
                     "text": chunk["text"],
                     "token_count": chunk["token_count"],
                     "speakers": chunk["speakers"],
                     "title": metadata.get("title"),
-                    "published": metadata.get("published"),
+                    "day": metadata.get("published"),
                     "summary": metadata.get("summary"),
 
-                })+ "\n")
-            
+                },ensure_ascii=False)+ "\n")
             break
+            
 
 
 if __name__ == "__main__":

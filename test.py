@@ -4,7 +4,7 @@ from sentence_transformers import SentenceTransformer
 
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-user_question = "summarize Latest updates on weather, war, wheat, economy, & inflation"
+user_question = "what are the topics Mike covered"
 
 results = retrieve(
     query=user_question,

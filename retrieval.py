@@ -4,7 +4,7 @@ from reranker import rerank
 def cosine_sim(a, b):
     return np.dot(a, b)
 
-def retrieve(query, chunks, model, k=2,top_n=1):
+def retrieve(query, chunks, model, k=5,top_n=4):
     q_emb = model.encode([query], normalize_embeddings=True)[0]
 
     scored = []
