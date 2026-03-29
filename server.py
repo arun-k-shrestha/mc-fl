@@ -33,7 +33,6 @@ def load_text(file_path: str) -> str:
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
 
-summary = load_text("summary.txt")
 
 @app.post("/ask")
 def ask_question(req: QuestionRequest):
@@ -42,17 +41,21 @@ def ask_question(req: QuestionRequest):
     results = retrieve(
         query=user_question,
         chunks=load_embeddings(),
-        model=model,
-        k=3)
+        model=model) # k-total chunks and n-top chunks are hard coded to 20 and 5 respectively
 
     context = "\n\n".join([ r["text"] for r in results])
 
     def stream():
         with client.responses.stream(
             model="gpt-4o-mini",
+            instructions="""You are an assistant that answers questions about podcast episodes
+                        from McKinney Flavelle's Hot Commodity Podcast. 
+                        Answer based only on the provided context. 
+                        If the answer isn't in the context, say so. 
+                        Reference speakers by name when relevant.""",
             input=f"""
                 Context:
-                {context,summary}
+                {context}
 
                 Question:
                 {user_question}
