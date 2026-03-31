@@ -4,6 +4,7 @@ from intent_types import answer_single,answer_multi,answer_temporal,answer_analy
 def answer(user_question,data,client,model) -> str:
     route = route_query(user_question, client)
     intent = route["route"]
+    print(intent)
     
     try:
         if intent == "analytical":

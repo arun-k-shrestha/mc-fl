@@ -140,8 +140,8 @@ If the data is insufficient (missing one period, missing comparable attributes, 
 
 Follow-up Question Requirements:
 - This is a temporal comparison → explicitly separate what is being compared
-- Generate multiple questions covering distinct aspects (e.g., speaker, topic, segment)
-- Each question must be retrieval-friendly and reuse wording from the provided data
+- Each question MUST include: speaker name, title, and date (only if available in the data — do not fabricate).
+- Each question must be retrieval-friendly and reuse title from the provided data
 - Include speaker name, title, and date ONLY if explicitly present (do not fabricate)
 - Avoid vague or generic phrasing
 
@@ -240,10 +240,9 @@ def answer_analytical(question, route, data, client):
     Follow-up Question Requirements:
 
     Generate multiple questions when the request has multiple missing dimensions.
-    Each question must be retrieval-friendly and reuse wording from the provided data.
-    Include speaker name, title, and date only when available in the context.
-    Do not fabricate metadata.
-    Focus follow-up questions on missing metrics, missing speakers, missing topics, or missing time coverage.
+    - Each question MUST include: speaker name, title, and date (only if available in the data — do not fabricate).
+    - Each question must be retrieval-friendly and reuse title from the provided data
+    - Include speaker name, title, and date only when available in the context.
 
     Additional Notes:
     Prefer precise, data-aligned queries over broad ones.
