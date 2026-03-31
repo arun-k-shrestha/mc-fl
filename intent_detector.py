@@ -21,3 +21,5 @@ def route_query(question: str, client) -> dict:
     )
     return json.loads(resp.choices[0].message.content)
 
+
+

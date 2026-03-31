@@ -6,6 +6,8 @@ import os
 from retrieval import retrieve
 from load import load_embeddings
 from sentence_transformers import SentenceTransformer
+from intent_router import answer
+
 
 
 load_dotenv()
@@ -20,6 +22,7 @@ api_key = os.getenv("OPENAI_API_KEY")
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 embeddings = load_embeddings()  # load once
 
+
 client = OpenAI(api_key=api_key)
 
 class QuestionRequest(BaseModel):
@@ -31,79 +34,65 @@ def load_text(file_path: str) -> str:
 
 
 
-user_question = " which episodes talked about the war"
-prompt_1 = f"""
-    You generate search queries for an embeddings database.
+user_question = "what are the things Nicole spoke?"
 
-    User question:
-    {user_question}
+answer_1 = answer(user_question,prompt_data,client,model)
 
-    Dataset schema / description:
-    {prompt_data}
+print(answer_1) 
 
-    Instructions:
-    - Generate 1 to 3 concise search queries.
-    - Only generate more than 3 if the question clearly requires multiple distinct aspects.
-    - Each query MUST include (speaker name, title, date)
-    - Keep queries specific and retrieval-focused.
-    - - If no valid query can be formed using the dataset fields, return: {{"queries": []}}
+boolean = answer_1.get("response", False)
+questions = answer_1.get("questions", [])
+text = answer_1.get("text", "")
 
-    Output:
-    Return JSON in exactly this format:
-    {{"queries": ["query 1", "query 2"]}}   Do not include any explanation.
-    """
+if boolean:
+    context = text
+else:
+    context = []
+    for question in questions:
+        results = retrieve(
+            query=question,
+            chunks=embeddings,
+            model=model)
+        context.extend(results)
 
-response_1 = client.chat.completions.create(
-model="gpt-4o-mini",
-messages=[{"role": "user", "content": prompt_1}],
-response_format={"type": "json_object"}
-)
-
-content = response_1.choices[0].message.content
-data = json.loads(content)
-questions = data.get("queries", [])
-
-print(questions)
-
-context = []
-for question in questions:
-    results = retrieve(
-        query=question,
-        chunks=embeddings,
-        model=model)
-    context.extend(results)
-
-context = "\n\n".join([ r["text"] for r in context])
-
-print(context)
+    context = "\n\n".join([ r["text"] for r in context])
 
 response_2 = client.responses.create(
     model="gpt-4o-mini",
-    instructions="""
-    You answer questions about McKinney Flavelle's Hot Commodity Podcast using ONLY the provided context.
+    instructions="""You answer questions about McKinney Flavelle's Hot Commodity Podcast using ONLY the provided transcript context.
+        SOURCE RULES:
+        - The transcript in the Context section is the ONLY source of truth.
+        - The "Relevant Speaker, Title, and Date" section is for attribution only and must NOT be used to introduce new facts.
+        - Do NOT use outside knowledge.
+        - Do NOT guess, infer, or fill in missing information.
 
-    Rules:
-    - Use ONLY the transcript content in the Context section as the source of truth.
-    - The "Relevant Speaker, Title, and Date" section is for attribution only, not for generating new facts.
-    - Do NOT use outside knowledge.
-    - Do NOT guess or infer beyond what is explicitly stated.
+        DECISION LOGIC:
+        - If the answer is explicitly supported in the transcript, provide a detailed answer.
+        - If the answer is NOT present at all, respond exactly:
+        I couldn't find that in the provided podcast context.
+        - If the topic is mentioned but lacks enough detail, respond:
+        The provided transcript is incomplete for this question. Missing information: <brief description>
 
-    If the answer IS found:
-    - Provide a clear, concise, factual answer.
-    - Include speaker name(s) if mentioned in the context.
-    - Include episode title or date if clearly supported.
+        ANSWER REQUIREMENTS:
+        - Write a natural, well-explained response in paragraph form.
+        - Use multiple sentences (at least 4 when enough information is available).
+        - Expand the answer by incorporating all relevant details from the transcript, not just the first matching line.
+        - Stay strictly grounded in what is explicitly stated in the transcript.
 
-    If the answer is NOT found:
-    - Respond exactly with:
-    "I couldn't find that in the provided podcast context."
+        ATTRIBUTION:
+        - Include speaker name(s) only if explicitly mentioned in the transcript.
+        - Include episode title or date only if explicitly supported by the transcript.
 
-    If the context is incomplete:
-    - State what specific information is missing (e.g., "The transcript does not include discussion of X").
+        CONSTRAINTS:
+        - Do NOT add reasoning, interpretation, assumptions, or outside knowledge.
+        - Do NOT generalize beyond what is stated.
+        - If additional relevant details exist in the transcript, include them to make the answer more complete.
 
-    Style:
-    - Be precise and concise.
-    - Prefer direct answers over summaries.
-    """,
+        STYLE:
+        - Write like a clear, helpful ChatGPT response.
+        - Use smooth, connected sentences (not bullet points or sections).
+        - Be specific and informative, but not verbose or repetitive.
+        """,
         input=f"""
     Context:
     {context}
