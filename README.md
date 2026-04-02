@@ -4,6 +4,8 @@ This project is a targeted backend service that processes audio from a specific 
 produces AI-powered summaries. It is designed to work alongside a dedicated frontend UI
 ---
 
+![Screenshot](images/architecture.png)
+
 ## Tech Stack
 
 | Category      | Tool                         |
