@@ -108,8 +108,17 @@ def ask_question(req: QuestionRequest):
         )as response:
             for event in response:
                 if event.type=="response.output_text.delta":
-                    yield event.delta
+                    yield f"data: {event.delta}\n\n"
+            yield "event: done\ndata: [DONE]\n\n"    
 
-    return StreamingResponse(stream(), media_type="text/plain")
+    return StreamingResponse(
+    stream(),
+    media_type="text/event-stream",
+    headers={
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    },
+    )
 
 
