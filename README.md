@@ -100,9 +100,9 @@ GitHub: https://github.com/arun-k-shrestha/mc-fl
 [mc-fl-frontend](https://github.com/arun-k-shrestha/mc-fl-frontend)
 
 The frontend provides:
-- 💬 An interface for users to ask questions about processed audio
-- 📝 Display of transcriptions and AI-generated summaries
-- 📊 Structured output for easier interaction and exploration
+- An interface for users to ask questions about processed audio
+- Display of transcriptions and AI-generated summaries
+- Structured output for easier interaction and exploration
 
 >  This backend is intended to be used alongside the frontend and is not a fully standalone public API.
 
